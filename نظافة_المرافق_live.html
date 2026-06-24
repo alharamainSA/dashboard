@@ -340,7 +340,7 @@ svg.ic-lg{width:18px;height:18px;display:inline-block;vertical-align:-4px;stroke
 // ══════════════════════════════════════════════════════
 // رابط CSV المنشور — نموذج تقييم أداء المرافق الخارجية
 // ══════════════════════════════════════════════════════
-const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQm1sE91Q-f0ypkEUSMPKGZAgVkM7A_Gk5q4WAYGEiuUqY_MCy7y9WqyThjhXFPnwfj_NlpA-YYsoz_/pub?gid=949800722&single=true&output=csv';
+const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTu8hjplx3oqTya3cpLBMQbi3LkDV8hNPaVgLBh2TevjYBh45NaJUMcZCETmDXw2gecDIv3YTno2scB/pub?gid=1968492245&single=true&output=csv';
 
 const INT_MAX=2.70, EXT_MAX=1.35, WC_MAX=1.65;
 
@@ -401,8 +401,7 @@ function switchView(v){
 }
 
 function parseCSV(txt){
-  const lines=txt.split('
-').map(l=>l.trim()).filter(l=>l);
+  const lines=txt.split('\n').map(l=>l.trim()).filter(l=>l);
   if(lines.length<2) return[];
   const hdr=splitRow(lines[0]);
   return lines.slice(1).map(l=>{const v=splitRow(l);const o={};hdr.forEach((h,i)=>o[h]=(v[i]||'').trim());return o;});
