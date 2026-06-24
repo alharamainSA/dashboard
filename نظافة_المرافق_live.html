@@ -601,20 +601,43 @@ function startCD(){
 async function loadData(){
   setStatus('loading','جاري التحميل…');
   try{
-    const res=await fetch(CSV_URL);
+    // Add cache-busting param + text override to avoid Excel download behaviour
+    const url = CSV_URL + '&t=' + Date.now();
+    const res = await fetch(url, {
+      headers: { 'Accept': 'text/csv, text/plain, */*' }
+    });
     if(!res.ok) throw new Error('HTTP '+res.status);
-    const txt=await res.text();
-    const rows=parseCSV(txt);
-    const data=process(rows);
-    if(!data) throw new Error('لا توجد بيانات');
+
+    // Read as ArrayBuffer then decode as UTF-8 to avoid BOM / encoding issues
+    const buf  = await res.arrayBuffer();
+    const txt  = new TextDecoder('utf-8').decode(buf).replace(/^\uFEFF/, ''); // strip BOM
+    if(!txt || txt.length < 10) throw new Error('الملف فارغ');
+
+    const rows = parseCSV(txt);
+    if(!rows.length) throw new Error('لا توجد صفوف');
+
+    // ── DEBUG: اطبع أسماء الأعمدة الفعلية في الكونسول
+    if(rows[0]){
+      console.log('=== الأعمدة الفعلية في الشيت ===');
+      Object.keys(rows[0]).forEach((k,i) => console.log(i, repr(k)));
+      console.log('=== قيمة عمود الموقع (رجال) ===', repr(rows[0]['الرجاء اختيار الموقع ']));
+      console.log('=== قيمة عمود الموقع (نساء) ===', repr(rows[0]['الرجاء اختيار الموقع (نساء)']));
+      console.log('=== قيمة النسبة الداخلية ===', rows[0]['النسبة العامة للمرافق الداخلية ']);
+      console.log('=== الصف الأول كاملاً ===', rows[0]);
+    }
+    function repr(s){ return JSON.stringify(s); }
+
+    const data = process(rows);
+    if(!data) throw new Error('لا توجد بيانات صالحة');
+
     render(data);
-    setStatus('ok',data.count+' تقييم · '+data.locs.length+' مواقع');
-    const lu=document.getElementById('cr-lastupdate');
-    if(lu) lu.textContent='آخر تحديث: '+new Date().toLocaleTimeString('ar-SA');
-    document.getElementById('last-update').textContent='آخر تحديث: '+new Date().toLocaleTimeString('ar-SA');
+    setStatus('ok', data.count+' تقييم · '+data.locs.length+' مواقع');
+    const lu = document.getElementById('cr-lastupdate');
+    if(lu) lu.textContent = 'آخر تحديث: '+new Date().toLocaleTimeString('ar-SA');
+    document.getElementById('last-update').textContent = 'آخر تحديث: '+new Date().toLocaleTimeString('ar-SA');
     startCD();
   }catch(e){
-    setStatus('err','تعذّر التحميل — تحقق من الاتصال');
+    setStatus('err','تعذّر التحميل — '+e.message);
     console.error(e);
     startCD();
   }
